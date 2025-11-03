@@ -35,8 +35,8 @@ const AiAssistant = () => {
   };
 
   return (
-    <div className="p-6 max-w-2xl mx-auto bg-white shadow-md rounded-lg border border-gray-200 relative">
-      {/* Header section with title + clear button */}
+    <div className="p-3 max-w-md mx-auto bg-white shadow-md rounded-lg border border-gray-200">
+      {/* Header with title + clear button */}
       <div className="flex justify-between items-center mb-3">
         <h2 className="text-lg font-semibold text-center flex-1">
           🧠 AI Assistant (LLaMA 3)
@@ -55,13 +55,13 @@ const AiAssistant = () => {
         placeholder="Ask anything..."
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
-        className="w-full p-3 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+        className="w-full p-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
         disabled={loading}
       />
 
       <button
         onClick={handleSubmit}
-        className="mt-3 w-full py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+        className="mt-2 w-full py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
         disabled={loading || !prompt.trim()}
       >
         {loading ? "Thinking..." : "Ask AI"}
@@ -70,7 +70,7 @@ const AiAssistant = () => {
       {response && (
         <div
           ref={resultRef}
-          className="mt-4 p-3 bg-gray-100 rounded text-sm whitespace-pre-wrap border border-gray-300 max-h-[400px] overflow-y-auto"
+          className="mt-3 p-2 bg-gray-100 rounded text-sm whitespace-pre-wrap border border-gray-300 max-h-48 overflow-y-auto"
         >
           {response}
         </div>

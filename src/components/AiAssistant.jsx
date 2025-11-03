@@ -1,6 +1,6 @@
 // src/components/AiAssistant.jsx
 import React, { useState, useRef } from "react";
-import { fetchAiResponse } from "../utils/aiEngine"; // ✅ fixed case-sensitive import
+import { fetchAiResponse } from "../utils/aiEngine";
 
 const AiAssistant = () => {
   const [prompt, setPrompt] = useState("");
@@ -24,30 +24,44 @@ const AiAssistant = () => {
       setLoading(false);
     }
 
-    // Smooth scroll to result
     setTimeout(() => {
       resultRef.current?.scrollIntoView({ behavior: "smooth" });
     }, 100);
   };
 
+  const handleClear = () => {
+    setPrompt("");
+    setResponse("");
+  };
+
   return (
-    <div className="p-3 max-w-md mx-auto bg-white shadow-md rounded-lg border border-gray-200">
-      <h2 className="text-lg font-semibold mb-3 text-center">
-        🧠 AI Assistant (LLaMA 3)
-      </h2>
+    <div className="p-6 max-w-2xl mx-auto bg-white shadow-md rounded-lg border border-gray-200 relative">
+      {/* Header section with title + clear button */}
+      <div className="flex justify-between items-center mb-3">
+        <h2 className="text-lg font-semibold text-center flex-1">
+          🧠 AI Assistant (LLaMA 3)
+        </h2>
+        <button
+          onClick={handleClear}
+          className="text-gray-500 hover:text-red-500 text-lg font-bold ml-2"
+          title="Clear Chat"
+        >
+          ✕
+        </button>
+      </div>
 
       <textarea
         rows={3}
         placeholder="Ask anything..."
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
-        className="w-full p-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+        className="w-full p-3 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
         disabled={loading}
       />
 
       <button
         onClick={handleSubmit}
-        className="mt-2 w-full py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+        className="mt-3 w-full py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
         disabled={loading || !prompt.trim()}
       >
         {loading ? "Thinking..." : "Ask AI"}
@@ -56,7 +70,7 @@ const AiAssistant = () => {
       {response && (
         <div
           ref={resultRef}
-          className="mt-3 p-2 bg-gray-100 rounded text-sm whitespace-pre-wrap border border-gray-300"
+          className="mt-4 p-3 bg-gray-100 rounded text-sm whitespace-pre-wrap border border-gray-300 max-h-[400px] overflow-y-auto"
         >
           {response}
         </div>

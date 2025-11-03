@@ -1,63 +1,91 @@
-import React, { useState } from 'react';
-import dayjs from 'dayjs';
+import React, { useState, useEffect, useRef } from "react";
+import dayjs from "dayjs";
 
 function DailyPlanner() {
-  const [taskInput, setTaskInput] = useState('');
+  const [taskInput, setTaskInput] = useState("");
   const [plans, setPlans] = useState([]);
   const [deletedPlans, setDeletedPlans] = useState([]);
   const [editingId, setEditingId] = useState(null);
-  const [editedText, setEditedText] = useState('');
+  const [editedText, setEditedText] = useState("");
+  const isInitialMount = useRef(true);
 
-  const getToday = () => dayjs().format('DD MMMM YYYY');
+  const getToday = () => dayjs().format("DD MMMM YYYY");
 
+  // ✅ Load once on mount
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem("dailyPlans")) || [];
+      setPlans(stored);
+    } catch {
+      setPlans([]);
+    }
+  }, []);
+
+  // ✅ Save only after initial load (to prevent overwrite)
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    localStorage.setItem("dailyPlans", JSON.stringify(plans));
+    window.dispatchEvent(new Event("dailyPlansUpdated"));
+  }, [plans]);
+
+  // ✅ Add Task
   const handleAddTask = (e) => {
     e.preventDefault();
-    if (taskInput.trim() === '') return;
+    if (!taskInput.trim()) return;
 
     const newTask = {
       id: Date.now(),
-      text: taskInput,
+      text: taskInput.trim(),
       date: getToday(),
     };
 
-    setPlans([...plans, newTask]);
-    setTaskInput('');
+    setPlans((prev) => [...prev, newTask]);
+    setTaskInput("");
   };
 
+  // ✅ Delete Task
   const handleDelete = (id) => {
-    const deletedTask = plans.find((task) => task.id === id);
-    setPlans(plans.filter((task) => task.id !== id));
-    setDeletedPlans([...deletedPlans, deletedTask]);
+    const deletedTask = plans.find((t) => t.id === id);
+    setPlans((prev) => prev.filter((t) => t.id !== id));
+    if (deletedTask) setDeletedPlans((prev) => [...prev, deletedTask]);
   };
 
-  const handleUndoDelete = (id) => {
-    const restoredTask = deletedPlans.find((task) => task.id === id);
-    setDeletedPlans(deletedPlans.filter((task) => task.id !== id));
-    setPlans([...plans, restoredTask]);
+  // ✅ Undo Delete
+  const handleUndo = (id) => {
+    const restored = deletedPlans.find((t) => t.id === id);
+    if (restored) {
+      setDeletedPlans((prev) => prev.filter((t) => t.id !== id));
+      setPlans((prev) => [...prev, restored]);
+    }
   };
 
+  // ✅ Edit Task
   const handleEdit = (id, text) => {
     setEditingId(id);
     setEditedText(text);
   };
 
-  const handleSaveEdit = (id) => {
-    setPlans(
-      plans.map((plan) =>
-        plan.id === id ? { ...plan, text: editedText } : plan
-      )
+  const saveEdit = (id) => {
+    setPlans((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, text: editedText } : p))
     );
     setEditingId(null);
-    setEditedText('');
+    setEditedText("");
   };
 
-  const handleCancelEdit = () => {
+  const cancelEdit = () => {
     setEditingId(null);
-    setEditedText('');
+    setEditedText("");
   };
 
-  const groupedPlans = plans.reduce((acc, plan) => {
-    acc[plan.date] = acc[plan.date] ? [...acc[plan.date], plan] : [plan];
+  // ✅ Group tasks by date
+  const groupedPlans = plans.reduce((acc, p) => {
+    if (!acc[p.date]) acc[p.date] = [];
+    acc[p.date].push(p);
     return acc;
   }, {});
 
@@ -81,17 +109,16 @@ function DailyPlanner() {
         </button>
       </form>
 
-      {/* 🗂️ Grouped by Date */}
       {Object.entries(groupedPlans).map(([date, tasks]) => (
         <div key={date} className="mb-6">
           <h3 className="text-lg font-semibold mb-2 text-gray-700">{date}</h3>
           <ul>
-            {tasks.map((plan) => (
+            {tasks.map((p) => (
               <li
-                key={plan.id}
+                key={p.id}
                 className="flex justify-between items-center p-2 border-b border-gray-200"
               >
-                {editingId === plan.id ? (
+                {editingId === p.id ? (
                   <div className="flex flex-grow items-center gap-2">
                     <input
                       type="text"
@@ -100,13 +127,13 @@ function DailyPlanner() {
                       className="flex-grow p-1 rounded border border-gray-300 bg-gray-50 text-gray-800"
                     />
                     <button
-                      onClick={() => handleSaveEdit(plan.id)}
+                      onClick={() => saveEdit(p.id)}
                       className="text-green-600 hover:text-green-800"
                     >
                       Save
                     </button>
                     <button
-                      onClick={handleCancelEdit}
+                      onClick={cancelEdit}
                       className="text-gray-500 hover:text-gray-700"
                     >
                       Cancel
@@ -114,16 +141,16 @@ function DailyPlanner() {
                   </div>
                 ) : (
                   <>
-                    <span className="flex-grow text-gray-800">{plan.text}</span>
+                    <span className="flex-grow text-gray-800">{p.text}</span>
                     <div className="flex gap-2">
                       <button
-                        onClick={() => handleEdit(plan.id, plan.text)}
+                        onClick={() => handleEdit(p.id, p.text)}
                         className="text-blue-600 hover:text-blue-800"
                       >
                         Edit
                       </button>
                       <button
-                        onClick={() => handleDelete(plan.id)}
+                        onClick={() => handleDelete(p.id)}
                         className="text-red-600 hover:text-red-800"
                       >
                         Delete
@@ -137,20 +164,19 @@ function DailyPlanner() {
         </div>
       ))}
 
-      {/* ♻️ Deleted Plans */}
       {deletedPlans.length > 0 && (
         <div className="mt-4">
-          <h3 className="text-lg font-semibold mb-2 text-gray-700">🗑️ Deleted Plans</h3>
-          <ul className="text-sm text-gray-600 space-y-1">
-            {deletedPlans.map((plan) => (
+          <h4 className="font-semibold text-gray-700 mb-2">🗑️ Recently Deleted</h4>
+          <ul>
+            {deletedPlans.map((t) => (
               <li
-                key={plan.id}
-                className="flex justify-between items-center border-b border-gray-200 py-1"
+                key={t.id}
+                className="flex justify-between items-center border-b py-1 text-gray-600"
               >
-                <span>{plan.text}</span>
+                <span>{t.text}</span>
                 <button
-                  onClick={() => handleUndoDelete(plan.id)}
-                  className="text-green-600 hover:text-green-800 text-xs"
+                  onClick={() => handleUndo(t.id)}
+                  className="text-green-600 hover:text-green-800"
                 >
                   Undo
                 </button>

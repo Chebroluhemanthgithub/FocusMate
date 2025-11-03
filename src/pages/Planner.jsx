@@ -1,13 +1,14 @@
 // pages/Planner.jsx
-import DailyPlanner from '../components/DailyPlanner';
-import PlannerList from '../components/PlannerList';
-import HourlyPlanner from '../components/HourlyPlanner';
+import DailyPlanner from "../components/DailyPlanner";
+import HourlyPlanner from "../components/HourlyPlanner";
 
 function Planner() {
   return (
-    <div className="pt-20 px-4">
+    <div className="pt-20 px-4 pb-48 bg-white text-gray-900 min-h-screen overflow-y-auto">
       <DailyPlanner />
-       <HourlyPlanner />
+      <div className="mt-10">
+        <HourlyPlanner />
+      </div>
     </div>
   );
 }

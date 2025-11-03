@@ -1,88 +1,126 @@
-
-// src/components/timer/usePomodoro.js
-import { useEffect, useRef, useState } from 'react';
-import dingSound from '../../assets/ding.mp3';
+import { useState, useEffect, useRef } from "react";
 
 export default function usePomodoro() {
   const [isRunning, setIsRunning] = useState(false);
   const [isBreak, setIsBreak] = useState(false);
-  const [workDuration, setWorkDuration] = useState(25);
-  const [breakDuration, setBreakDuration] = useState(5);
-  const [timeLeft, setTimeLeft] = useState(25 * 60);
-  const [sessionsCompleted, setSessionsCompleted] = useState(0);
-  const [sessionHistory, setSessionHistory] = useState({});
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [workDuration, setWorkDuration] = useState(
+    () => Number(localStorage.getItem("workDuration")) || 25
+  );
+  const [breakDuration, setBreakDuration] = useState(
+    () => Number(localStorage.getItem("breakDuration")) || 5
+  );
+  const [sessionsCompleted, setSessionsCompleted] = useState(
+    () => Number(localStorage.getItem("sessionsCompleted")) || 0
+  );
+  const [sessionHistory, setSessionHistory] = useState(
+    () => JSON.parse(localStorage.getItem("sessionHistory")) || []
+  );
 
   const intervalRef = useRef(null);
-  const audioRef = useRef(new Audio(dingSound));
 
+  // Initialize time
   useEffect(() => {
-    const stored = localStorage.getItem('sessionHistory');
-    if (stored) setSessionHistory(JSON.parse(stored));
-  }, [sessionsCompleted]);
+    setTimeLeft(workDuration * 60);
+  }, [workDuration]);
 
+  // Persist state
   useEffect(() => {
-    setTimeLeft((isBreak ? breakDuration : workDuration) * 60);
-  }, [workDuration, breakDuration, isBreak]);
+    localStorage.setItem("workDuration", workDuration);
+    localStorage.setItem("breakDuration", breakDuration);
+    localStorage.setItem("sessionsCompleted", sessionsCompleted);
+    localStorage.setItem("sessionHistory", JSON.stringify(sessionHistory));
+  }, [workDuration, breakDuration, sessionsCompleted, sessionHistory]);
 
+  // Main timer logic
   useEffect(() => {
-    if (isRunning) {
-      intervalRef.current = setInterval(() => {
-        setTimeLeft(prev => {
-          if (prev === 1) {
-            clearInterval(intervalRef.current);
-            audioRef.current.play();
+    if (!isRunning) return;
 
-            if (!isBreak) {
-              setIsBreak(true);
-              setSessionsCompleted(prev => {
-                const updated = prev + 1;
-                const today = new Date().toISOString().split('T')[0];
-                const history = JSON.parse(localStorage.getItem('sessionHistory') || '{}');
-                history[today] = (history[today] || 0) + 1;
-                localStorage.setItem('sessionHistory', JSON.stringify(history));
-                return updated;
-              });
-            } else {
-              setIsBreak(false);
-            }
+    intervalRef.current = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(intervalRef.current);
 
-            setIsRunning(false);
-            return 0;
+          if (!isBreak) {
+            // ✅ Count session only after work time ends
+            const newCount = sessionsCompleted + 1;
+            setSessionsCompleted(newCount);
+
+            const newHistory = [
+              ...sessionHistory,
+              { session: newCount, date: new Date().toLocaleTimeString() },
+            ];
+            setSessionHistory(newHistory);
+
+            // 🔄 notify Home instantly
+            window.dispatchEvent(new Event("pomodoroUpdated"));
           }
-          return prev - 1;
-        });
-      }, 1000);
-    }
+
+          // Switch between work <-> break
+          const nextMode = !isBreak;
+          setIsBreak(nextMode);
+
+          if (nextMode && breakDuration > 0) {
+            setTimeLeft(breakDuration * 60);
+            setIsRunning(true);
+          } else if (!nextMode && workDuration > 0) {
+            setTimeLeft(workDuration * 60);
+            setIsRunning(true);
+          } else {
+            setIsRunning(false);
+          }
+
+          return nextMode ? breakDuration * 60 : workDuration * 60;
+        }
+        return prev - 1;
+      });
+    }, 1000);
 
     return () => clearInterval(intervalRef.current);
-  }, [isRunning]);
+  }, [isRunning, isBreak]);
 
-  const toggleTimer = () => setIsRunning(prev => !prev);
+  const toggleTimer = () => setIsRunning((prev) => !prev);
+
   const resetTimer = () => {
     clearInterval(intervalRef.current);
     setIsRunning(false);
     setIsBreak(false);
     setTimeLeft(workDuration * 60);
   };
-  const resetCounter = () => setSessionsCompleted(0);
+
   const clearSessionHistory = () => {
-    localStorage.removeItem('sessionHistory');
-    setSessionHistory({});
     setSessionsCompleted(0);
+    setSessionHistory([]);
+    localStorage.removeItem("sessionHistory");
+    localStorage.setItem("sessionsCompleted", 0);
+
+    // 🔄 also inform Home
+    window.dispatchEvent(new Event("pomodoroCleared"));
   };
 
-  const formatTime = (secs) => {
-    const m = Math.floor(secs / 60).toString().padStart(2, '0');
-    const s = (secs % 60).toString().padStart(2, '0');
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60)
+      .toString()
+      .padStart(2, "0");
+    const s = Math.floor(seconds % 60)
+      .toString()
+      .padStart(2, "0");
     return `${m}:${s}`;
   };
 
   return {
-    isRunning, toggleTimer, resetTimer,
-    isBreak, timeLeft, formatTime,
-    workDuration, breakDuration,
-    setWorkDuration, setBreakDuration,
-    sessionsCompleted, resetCounter,
-    clearSessionHistory, sessionHistory
+    isRunning,
+    isBreak,
+    timeLeft,
+    workDuration,
+    breakDuration,
+    sessionsCompleted,
+    sessionHistory,
+    toggleTimer,
+    resetTimer,
+    setWorkDuration,
+    setBreakDuration,
+    clearSessionHistory,
+    formatTime,
   };
 }

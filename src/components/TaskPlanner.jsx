@@ -1,86 +1,104 @@
+import React, { useReducer, useEffect, useState } from "react";
+import { taskReducer } from "../reducers/taskReducer";
 
-import React, { useState, useEffect } from 'react';
+const TaskPlanner = () => {
+  const [taskText, setTaskText] = useState("");
+  const [filter, setFilter] = useState("all");
 
-function TaskPlanner() {
-  const [tasks, setTasks] = useState([]);
-  const [input, setInput] = useState('');
+  const [tasks, dispatch] = useReducer(taskReducer, [], () => {
+    const localData = localStorage.getItem("tasks");
+    return localData ? JSON.parse(localData) : [];
+  });
 
-  // Load saved tasks from localStorage
   useEffect(() => {
-    const savedTasks = JSON.parse(localStorage.getItem('tasks'));
-    if (savedTasks) setTasks(savedTasks);
-  }, []);
-
-  // Save tasks to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem('tasks', JSON.stringify(tasks));
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+    window.dispatchEvent(new Event("tasksUpdated"));
   }, [tasks]);
 
-  const addTask = () => {
-    if (input.trim()) {
-      const newTask = { id: Date.now(), text: input, completed: false };
-      setTasks([...tasks, newTask]);
-      setInput('');
+  const handleAdd = () => {
+    if (taskText.trim()) {
+      dispatch({ type: "ADD_TASK", payload: taskText });
+      setTaskText("");
     }
   };
 
-  const toggleComplete = (id) => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === id ? { ...task, completed: !task.completed } : task
-      )
-    );
-  };
-
-  const deleteTask = (id) => {
-    setTasks(tasks.filter((task) => task.id !== id));
-  };
+  const filteredTasks = tasks.filter((task) => {
+    if (filter === "completed") return task.completed;
+    if (filter === "active") return !task.completed;
+    return true;
+  });
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-6 rounded shadow-md">
-      <h2 className="text-xl font-semibold mb-4 text-center">📝 Task Planner</h2>
-      <div className="flex gap-2 mb-4">
+    <div className="space-y-4 max-w-lg mx-auto mt-6">
+      {/* 📝 Title Section */}
+      <div className="flex items-center justify-center gap-2 text-2xl font-semibold">
+        <span role="img" aria-label="book">
+          📒
+        </span>
+        <h2>Task Planner</h2>
+      </div>
+
+      {/* ➕ Input Box */}
+      <div className="flex items-center gap-2">
         <input
-          type="text"
-          placeholder="Enter your task..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          className="flex-1 px-3 py-2 rounded border dark:bg-gray-700 dark:text-white"
+          className="flex-1 border px-2 py-1 rounded"
+          placeholder="Enter new task"
+          value={taskText}
+          onChange={(e) => setTaskText(e.target.value)}
         />
         <button
-          onClick={addTask}
-          className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
+          onClick={handleAdd}
+          className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
         >
           Add
         </button>
       </div>
+
+      {/* 🔍 Filter Buttons */}
+      <div className="flex gap-2 justify-center">
+        {["all", "active", "completed"].map((type) => (
+          <button
+            key={type}
+            onClick={() => setFilter(type)}
+            className={`px-2 py-1 rounded ${
+              filter === type ? "bg-gray-300 dark:bg-gray-700" : ""
+            }`}
+          >
+            {type.charAt(0).toUpperCase() + type.slice(1)}
+          </button>
+        ))}
+      </div>
+
+      {/* 📋 Task List */}
       <ul className="space-y-2">
-        {tasks.map((task) => (
+        {filteredTasks.map((task) => (
           <li
             key={task.id}
-            className={`flex justify-between items-center px-4 py-2 rounded ${
-              task.completed ? 'bg-green-100 dark:bg-green-700 text-green-900' : 'bg-gray-100 dark:bg-gray-700'
+            className={`flex items-center justify-between p-2 border rounded ${
+              task.completed ? "line-through text-gray-500" : ""
             }`}
           >
             <span
-              onClick={() => toggleComplete(task.id)}
-              className={`cursor-pointer flex-1 ${
-                task.completed ? 'line-through opacity-70' : ''
-              }`}
+              onClick={() =>
+                dispatch({ type: "TOGGLE_TASK", payload: task.id })
+              }
+              className="cursor-pointer flex-1"
             >
               {task.text}
             </span>
             <button
-              onClick={() => deleteTask(task.id)}
-              className="text-red-500 hover:text-red-700"
+              onClick={() =>
+                dispatch({ type: "DELETE_TASK", payload: task.id })
+              }
+              className="text-red-600 hover:text-red-800"
             >
-              ✖
+              ❌
             </button>
           </li>
         ))}
       </ul>
     </div>
   );
-}
+};
 
 export default TaskPlanner;

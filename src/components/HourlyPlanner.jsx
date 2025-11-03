@@ -18,6 +18,7 @@ const HourlyPlanner = () => {
     const stored = JSON.parse(localStorage.getItem('hourlyTasks')) || {};
     stored[selectedDate] = tasks;
     localStorage.setItem('hourlyTasks', JSON.stringify(stored));
+    window.dispatchEvent(new Event('hourlyPlansUpdated'));
   }, [tasks, selectedDate]);
 
   const handleTaskChange = (hour, value) => {
@@ -30,6 +31,7 @@ const HourlyPlanner = () => {
       const stored = JSON.parse(localStorage.getItem('hourlyTasks')) || {};
       delete stored[selectedDate];
       localStorage.setItem('hourlyTasks', JSON.stringify(stored));
+      window.dispatchEvent(new Event('hourlyPlansUpdated'));
     }
   };
 
@@ -51,7 +53,7 @@ const HourlyPlanner = () => {
         onClick={() => setShowPlanner((prev) => !prev)}
         className="w-full text-left bg-indigo-600 text-white px-4 py-3 rounded-md mb-4 hover:bg-indigo-700 transition"
       >
-        {showPlanner ? '🔽 Hide Daily Planner' : '🕒 Show Daily Planner'}
+        {showPlanner ? '🔽 Hide Hourly Planner' : '🕒 Show Hourly Planner'}
       </button>
 
       {showPlanner && (

@@ -1,4 +1,3 @@
-// src/components/AiAssistant.jsx
 import React, { useState, useRef } from "react";
 import { fetchAiResponse } from "../utils/aiEngine";
 
@@ -10,7 +9,6 @@ const AiAssistant = () => {
 
   const handleSubmit = async () => {
     if (!prompt.trim()) return;
-
     setLoading(true);
     setResponse("");
 
@@ -24,9 +22,8 @@ const AiAssistant = () => {
       setLoading(false);
     }
 
-    setTimeout(() => {
-      resultRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, 100);
+    // scroll result into view inside assistant
+    setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
   };
 
   const handleClear = () => {
@@ -35,46 +32,64 @@ const AiAssistant = () => {
   };
 
   return (
-    <div className="p-3 max-w-md mx-auto bg-white shadow-md rounded-lg border border-gray-200">
-      {/* Header with title + clear button */}
-      <div className="flex justify-between items-center mb-3">
-        <h2 className="text-lg font-semibold text-center flex-1">
-          🧠 AI Assistant (LLaMA 3)
-        </h2>
-        <button
-          onClick={handleClear}
-          className="text-gray-500 hover:text-red-500 text-lg font-bold ml-2"
-          title="Clear Chat"
-        >
-          ✕
-        </button>
+    <div
+      className="
+        mx-auto bg-white shadow-md rounded-lg border border-gray-200
+        p-4
+      "
+      // keep natural flow (not fixed). width controlled by parent (.max-w-3xl)
+    >
+      {/* header */}
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-lg font-semibold">🧠 AI Assistant (LLaMA 3)</h2>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleClear}
+            title="Clear"
+            className="px-2 py-1 rounded text-gray-600 hover:text-red-600"
+          >
+            ✕
+          </button>
+        </div>
       </div>
 
+      {/* input */}
       <textarea
         rows={3}
         placeholder="Ask anything..."
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
-        className="w-full p-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+        className="w-full p-3 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
         disabled={loading}
       />
 
-      <button
-        onClick={handleSubmit}
-        className="mt-2 w-full py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-        disabled={loading || !prompt.trim()}
-      >
-        {loading ? "Thinking..." : "Ask AI"}
-      </button>
-
-      {response && (
-        <div
-          ref={resultRef}
-          className="mt-3 p-2 bg-gray-100 rounded text-sm whitespace-pre-wrap border border-gray-300 max-h-48 overflow-y-auto"
+      {/* actions */}
+      <div className="mt-3 flex items-center gap-3">
+        <button
+          onClick={handleSubmit}
+          disabled={loading || !prompt.trim()}
+          className={`px-4 py-2 rounded text-white ${
+            loading || !prompt.trim() ? "bg-blue-300 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
+          }`}
         >
-          {response}
-        </div>
-      )}
+          {loading ? "Thinking..." : "Ask AI"}
+        </button>
+
+        <button
+          onClick={handleClear}
+          className="px-3 py-2 rounded border border-gray-300 text-sm text-gray-700 hover:bg-gray-50"
+        >
+          Clear
+        </button>
+      </div>
+
+      {/* result (limited height, scrollable) */}
+      <div
+        ref={resultRef}
+        className="mt-3 p-3 bg-gray-50 rounded border border-gray-200 text-sm whitespace-pre-wrap max-h-[40vh] overflow-y-auto"
+      >
+        {response || <div className="text-gray-400">No response yet — ask something above.</div>}
+      </div>
     </div>
   );
 };

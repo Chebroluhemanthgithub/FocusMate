@@ -31,21 +31,23 @@ const AiAssistant = () => {
   };
 
   return (
-    <div className="p-4 max-w-xl mx-auto bg-white shadow rounded-lg">
-      <h2 className="text-xl font-bold mb-4">🧠 AI Assistant (LLaMA 3)</h2>
+    <div className="p-3 max-w-md mx-auto bg-white shadow-md rounded-lg border border-gray-200">
+      <h2 className="text-lg font-semibold mb-3 text-center">
+        🧠 AI Assistant (LLaMA 3)
+      </h2>
 
       <textarea
-        rows={4}
+        rows={3}
         placeholder="Ask anything..."
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
-        className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+        className="w-full p-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
         disabled={loading}
       />
 
       <button
         onClick={handleSubmit}
-        className="mt-3 px-5 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+        className="mt-2 w-full py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
         disabled={loading || !prompt.trim()}
       >
         {loading ? "Thinking..." : "Ask AI"}
@@ -54,7 +56,7 @@ const AiAssistant = () => {
       {response && (
         <div
           ref={resultRef}
-          className="mt-4 p-3 bg-gray-100 rounded text-sm whitespace-pre-wrap border border-gray-300"
+          className="mt-3 p-2 bg-gray-100 rounded text-sm whitespace-pre-wrap border border-gray-300"
         >
           {response}
         </div>
